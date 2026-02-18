@@ -19,8 +19,6 @@ on:
       repo:
         type: string
         default: ${{ github.repository }}
-      ssh-key:
-        type: string
         
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -52,7 +50,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: ${{ inputs.repo }}
-          ssh-key: ${{ inputs.ssh-key }}
+          ssh-key: ${{ secrets.DEPLOY_KEY }}
           ref: ${{ inputs.environment }}
           fetch-depth: 0
       - name: Verify yaml path
