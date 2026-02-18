@@ -19,7 +19,7 @@ on:
       repo:
         type: string
         default: ${{ github.repository }}
-      token:
+      ssh-key:
         type: string
         
 concurrency:
@@ -52,7 +52,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: ${{ inputs.repo }}
-          token: ${{ inputs.token }}
+          ssh-key: ${{ inputs.ssh-key }}
           ref: ${{ inputs.environment }}
           fetch-depth: 0
       - name: Verify yaml path
