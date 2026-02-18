@@ -1,0 +1,92 @@
+name: Rollback to previous version
+
+on:
+  workflow_call:
+    inputs:
+      chart-path:
+        type: string
+        description: "List chart paths seperated by space (e.g. 'chart1 chart2')"
+        default: "."
+      environment:
+        type: string
+        default: ${{ github.ref_name }}
+      yaml-path:
+        type: string
+        required: true
+      dry-run:
+        type: boolean
+        default: true
+      repo:
+        type: string
+        default: ${{ github.repository }}
+      token:
+        type: string
+        
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  prepare-matrix:
+    runs-on: ubuntu-latest
+    env:
+      chart_path: ${{ inputs.chart-path }}
+    outputs:
+      chart-path-json: ${{ steps.json.outputs.chart-path-json }}
+    steps:
+      - name: JSONify file paths
+        id: json
+        run: |
+          echo "chart-path-json=$(jq --null-input --compact-output '$ARGS.positional' --args $chart_path)" >> "$GITHUB_OUTPUT"
+  rollback:
+    runs-on: ubuntu-latest
+    needs: prepare-matrix
+    strategy:
+      matrix:
+        chart-path: ${{ fromJson(needs.prepare-matrix.outputs.chart-path-json) }}
+    env:
+      values_file: ${{ matrix.chart-path }}/values.${{ inputs.environment }}.yaml
+      chart-path: ${{ matrix.chart-path }}
+      yq_path: .${{ inputs.yaml-path }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ inputs.repo }}
+          token: ${{ inputs.token }}
+          ref: ${{ inputs.environment }}
+          fetch-depth: 0
+      - name: Verify yaml path
+        run: |
+          if ! yq -e 'eval(env(yq_path))' $values_file 2> /dev/null; then
+            echo "::error::$yq_path Doesn't exist in $values_file"
+            exit 1
+          fi
+      - name: Get line number
+        run: |
+          echo "n=$(yq 'eval(env(yq_path)) | line' $values_file)" >> "$GITHUB_ENV"
+      - name: Get version commit
+        run: |
+          echo "c=$(git blame -L $n,$n $values_file | awk '{ print $1 }')" >> "$GITHUB_ENV"
+      - name: Fail on first tag
+        if: ${{ contains(env.c, '^') }}
+        run: |
+          echo "::error::Working on initial commit $c"
+          exit 1
+      - name: Get previous tag
+        run: |
+          echo "tag=$(git blame -L $n,$n $c~ -s $values_file | awk '{ print $4 }')" >> "$GITHUB_ENV"
+      - name: Set new tag
+        run: |
+          yq -i 'eval(env(yq_path)) = strenv(tag)' $values_file
+      - name: Configure git
+        run: |
+          git config --global user.email "automation@progressplay.com"
+          git config --global user.name "pp-automation"
+      - name: Git diff
+        run: |
+          git diff
+      - name: Commit and push
+        if: ${{ ! inputs.dry-run }}
+        run: |
+          git commit -am "Rollback to $tag"
+        #  git push
