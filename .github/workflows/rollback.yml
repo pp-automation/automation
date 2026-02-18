@@ -87,4 +87,4 @@ jobs:
         if: ${{ ! inputs.dry-run }}
         run: |
           git commit -am "Rollback to $tag"
-        #  git push
+          git push
