@@ -46,6 +46,7 @@ jobs:
         chart-path: ${{ fromJson(needs.prepare-matrix.outputs.chart-path-json) }}
     env:
       values_file: ${{ matrix.chart-path }}/values.${{ inputs.environment }}.yaml
+      old_values_file: ${{ matrix.chart-path }}/oldvalues.yaml
       chart-path: ${{ matrix.chart-path }}
       yq_path: .${{ inputs.yaml-path }}
     steps:
@@ -73,6 +74,12 @@ jobs:
         run: |
           echo "::error::Working on initial commit $c"
           exit 1
+      - name: Checkout old values
+        run: |
+          git show $c:$values_file > $old_values_file
+      - name: Get new line
+        run: |
+          echo "n=$(yq 'eval(env(yq_path)) | line' $old_values_file)" >> "$GITHUB_ENV"
       - name: Get previous tag
         run: |
           echo "tag=$(git blame -L $n,$n $c~ -s $values_file | awk '{ print $4 }')" >> "$GITHUB_ENV"
