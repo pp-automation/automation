@@ -2,6 +2,9 @@ name: Rollback to previous version
 
 on:
   workflow_call:
+    secrets:
+      ssh-key:
+        required: true
     inputs:
       chart-path:
         type: string
@@ -19,7 +22,7 @@ on:
       repo:
         type: string
         default: ${{ github.repository }}
-        
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
 
@@ -50,7 +53,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: ${{ inputs.repo }}
-          ssh-key: ${{ secrets.DEPLOY_KEY }}
+          ssh-key: ${{ secrets.ssh-key }}
           ref: ${{ inputs.environment }}
           fetch-depth: 0
       - name: Verify yaml path
