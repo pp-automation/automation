@@ -79,7 +79,7 @@ jobs:
           git show $c~:$values_file > $old_values_file
       - name: Get previous tag
         run: |
-          echo "tag=$(q 'eval(env(yq_path))' $old_values_file)" >> "$GITHUB_ENV"
+          echo "tag=$(yq 'eval(env(yq_path))' $old_values_file)" >> "$GITHUB_ENV"
       - name: Set new tag
         run: |
           yq -i 'eval(env(yq_path)) = strenv(tag)' $values_file
