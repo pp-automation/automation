@@ -80,6 +80,11 @@ jobs:
       - name: Get previous tag
         run: |
           echo "tag=$(yq 'eval(env(yq_path))' $old_values_file)" >> "$GITHUB_ENV"
+      - name: Safeguard new tag
+        if: ${{ env.tag == '' }}
+        run: |
+          echo "::error::Something went wrong. Please contact adminstrator"
+          exit 1
       - name: Set new tag
         run: |
           yq -i 'eval(env(yq_path)) = strenv(tag)' $values_file
