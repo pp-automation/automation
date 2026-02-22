@@ -76,13 +76,10 @@ jobs:
           exit 1
       - name: Checkout old values
         run: |
-          git show $c:$values_file > $old_values_file
-      - name: Get new line
-        run: |
-          echo "n=$(yq 'eval(env(yq_path)) | line' $old_values_file)" >> "$GITHUB_ENV"
+          git show $c~:$values_file > $old_values_file
       - name: Get previous tag
         run: |
-          echo "tag=$(git blame -L $n,$n $c~ -s $values_file | awk '{ print $4 }')" >> "$GITHUB_ENV"
+          echo "tag=$(q 'eval(env(yq_path))' $old_values_file)" >> "$GITHUB_ENV"
       - name: Set new tag
         run: |
           yq -i 'eval(env(yq_path)) = strenv(tag)' $values_file
