@@ -1,0 +1,61 @@
+name: on pull request
+on:
+  workflow_dispatch: 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.base_ref }}-${{ github.head_ref }}
+  cancel-in-progress: true
+jobs: 
+  build:
+    runs-on: dev-be
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          repository: gavriel84/pp.bo.api
+          ssh-key: ${{ secrets.DEPLOY_KEY }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Expose GitHub Runtime
+        uses: crazy-max/ghaction-github-runtime@v3
+
+      # - name: Cache Docker layers
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: /tmp/.buildx-cache
+      #     key: ${{ runner.os }}-buildx-${{ github.sha }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-buildx-
+
+
+      # - name: Build and push Docker image
+      #   env:
+      #     IMAGE: ${{ steps.set-tag.outputs.release-tag }}
+      #   run: |
+      #     cd PPAPI
+      #     docker compose -f docker-compose.yml -f docker-compose.override.k8s.yml build
+
+      - name: Build Docker image
+        uses: docker/bake-action@v5
+        env:
+          IMAGE: v1
+        with:
+          workdir: PPAPI
+          files: |
+            docker-compose.yml
+            docker-compose.override.k8s.yml
+          set: |     
+            *.cache-from=type=gha
+            *.cache-to=type=gha,mode=max
+          load: true
+      # - name: Build and push Docker image
+      #   env:
+      #     DOCKER_BUILDKIT: 1
+      #     BUILDKIT_INLINE_CACHE: 1
+      #     IMAGE: ${{ steps.set-tag.outputs.release-tag }}
+      #   run: |
+      #     cd PPAPI
+      #     DOCKER_BUILDKIT=1 docker compose -f docker-compose.yml -f docker-compose.override.k8s.yml build 
+          teams_webhook_url: ${{ secrets.TEAM_HOOK }}
+          message: "Github Action Build Number ${{ github.run_number }} Completed for ${{ github.repository }} and the outcome is  ${{ needs.build.result }}."
