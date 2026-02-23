@@ -17,7 +17,9 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
-          driver: docker-container
+          driver: kubernetes
+          driver-opts: |
+            rootless=true
 
       - name: Expose GitHub Runtime
         uses: crazy-max/ghaction-github-runtime@v3
