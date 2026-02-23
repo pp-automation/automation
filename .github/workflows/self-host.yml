@@ -7,8 +7,6 @@ concurrency:
 jobs: 
   build:
     runs-on: dev-be
-    container:
-      image: ubuntu
     steps:
       - name: Check out code
         uses: actions/checkout@v4
