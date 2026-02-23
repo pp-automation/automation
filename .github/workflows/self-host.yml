@@ -44,6 +44,7 @@ jobs:
         uses: docker/bake-action@v5
         env:
           IMAGE: v1
+          GH_PACKAGES_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
         with:
           workdir: PPAPI
           files: |
@@ -52,6 +53,7 @@ jobs:
           set: |     
             *.cache-from=type=gha
             *.cache-to=type=gha,mode=max
+            *.secrets=id=gh_packages_token,env=GH_PACKAGES_TOKEN
           load: true
       # - name: Build and push Docker image
       #   env:
