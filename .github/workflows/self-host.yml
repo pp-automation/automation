@@ -61,5 +61,3 @@ jobs:
       #   run: |
       #     cd PPAPI
       #     DOCKER_BUILDKIT=1 docker compose -f docker-compose.yml -f docker-compose.override.k8s.yml build 
-          teams_webhook_url: ${{ secrets.TEAM_HOOK }}
-          message: "Github Action Build Number ${{ github.run_number }} Completed for ${{ github.repository }} and the outcome is  ${{ needs.build.result }}."
